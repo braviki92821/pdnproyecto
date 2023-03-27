@@ -10,7 +10,7 @@ var jwt = require('jsonwebtoken');
 const https = require('https')
 const fs = require('fs');
 var cors = require('cors');
-
+const port = 9004
 
 require('dotenv').config({path: './config/config.env'});
 //require('dotenv').config({path: './config/configuration.env'});
@@ -23,10 +23,10 @@ var tokenModel = require('./mongo/model/token');
 var app = express();
 //parse the response
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true })); // support form-encoded bodies (for the token endpoint)
+app.use(cors(),bodyParser.urlencoded({ extended: true })); // support form-encoded bodies (for the token endpoint)
 
 //connection mongo db
-const db = mongoose.connect('mongodb://'+process.env.USERMONGO+':'+process.env.PASSWORDMONGO+'@'+process.env.HOSTMONGO+'/'+process.env.DATABASE, { useNewUrlParser: true,  useUnifiedTopology: true  })
+const db = mongoose.connect('mongodb://localhost:27017/auth20', { useNewUrlParser: true,  useUnifiedTopology: true  })
     .then(() => console.log('Connect to MongoDB..'))
     .catch(err => console.error('Could not connect to MongoDB..', err))
 
@@ -35,17 +35,24 @@ app.post('/oauth/token',async  function(req, res) {
     let scopeBody = req.body.scope ?  req.body.scope.split(' ') : [];
     if(clientObject.id){
         let cliente = await clientService.getClient(clientObject.id);
+        console.log(cliente)
                 if(cliente){
+                    console.log(cliente)
                     let clientSecret='';
+                    console.log('sas'+cliente.client_secret)
                     if(cliente.clientSecret){
-                        clientSecret = cliente.clientSecret;
+                        clientSecret = cliente.clientSecret; 
+                        console.log('sos es '+clientSecret)
                     }
                     if(clientObject.secret === clientSecret){
                     if (req.body.grant_type == 'password'){
                         if (req.body.username && req.body.password) {
                             let username = req.body.username;
                             let password = req.body.password;
+                            console.log(username)
+                            console.log(password)
                             let user = await userService.getUser(username, password);
+                            console.log(user)
                             let scopes= '';
                             if (user) {
                                 if(user.scope.length < scopeBody.length){
@@ -68,8 +75,9 @@ app.post('/oauth/token',async  function(req, res) {
                                         return res.status(422).json({code: '422' ,message: 'Scope no proporcionado'});
                                     }
                                 }
-
-                                let tokenResponse = createToken(clientObject.id, user.username, scopes);
+                                let userId=user.id;
+                                console.log(userId);
+                                let tokenResponse = createToken(clientObject.id, user.username, scopes,userId);
                                 let tokenInstance = new tokenModel(tokenResponse);
                                 tokenInstance.save(function (err) {
                                     if (err) return handleError(err);
@@ -169,23 +177,23 @@ app.get('/getVersion', async function(req, res){
     return res.status(200).json({code: '200',  message: 'Versión: 02/05/2022' });
 });
 
-
-function createToken(clientId,username, scope){
-    let expiresin = Number(process.env.EXT); //se obtienen los segundos de vida del token
+function createToken(clientId,username, scope,userId){
+    let expiresin = Number(600); //se obtienen los segundos de vida del token
 
     let access_token = jwt.sign({
         username: username,
         jti: randomstring.generate(8),
-        scope : scope
-    },process.env.SEED,{expiresIn : expiresin }); //se genera el JWT y se se agregan a su payload algunos atributos que consideramos se utilizaran en el API
+        scope : scope,
+        idUser : userId
+    },'YTBGD9YjAUhkjQk9ZXcb',{expiresIn : expiresin }); //se genera el JWT y se se agregan a su payload algunos atributos que consideramos se utilizaran en el API
 
     let tokenResponse = {
         access_token: access_token,
         token_type: 'Bearer',
         expires_in: expiresin, //value in seconds
         refresh_token: randtoken.uid(256),
-        refresh_token_expires_in: Number(process.env.RTEXT) , //value in seconds
-        refresh_token_expires_in_date: Math.floor(Date.now() / 1000) + Number(process.env.RTEXT) ,
+        refresh_token_expires_in: Number(600) , //value in seconds
+        refresh_token_expires_in_date: Math.floor(Date.now() / 1000) + Number(600) ,
         scope: scope,
         client: {clientId: clientId},
         user: {username : username}
@@ -215,11 +223,9 @@ let decodeClientCredentials = function(req) {
     return { id: clientId, secret: clientSecret };
 };
 
-let server = app.listen(process.env.PORTSERVER, function () {
-    let host = server.address().address;
-    let port = server.address().port;
-    console.log(' Authorization Server is listening at http://%s:%s', host, port);
-});
+ app.listen(port, function () {
+    console.log(' Authorization Server is listening at http://localhost:'+port);
+ });
 
 /*// we will pass our 'app' to 'https' server
 https.createServer({
