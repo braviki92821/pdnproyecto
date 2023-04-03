@@ -219,7 +219,7 @@ let decodeClientCredentials = function(req) {
 };
 
  app.listen(port,host, ()=> {
-    console.log(' Authorization Server is listening at http://localhost:'+port);
+    console.log(' Authorization Server is listening at http://'+host+':'+port);
  });
 
 /*// we will pass our 'app' to 'https' server
