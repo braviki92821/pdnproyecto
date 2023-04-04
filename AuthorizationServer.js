@@ -26,7 +26,7 @@ app.use(bodyParser.json());
 app.use(cors(),bodyParser.urlencoded({ extended: true })); // support form-encoded bodies (for the token endpoint)
 
 //connection mongo db localhost:27017/auth20'
-const db = mongoose.connect('mongodb://'+process.env.USERMONGO+':'+process.env.PASSWORDMONGO+process.env.HOSTMONGO+process.env.DATABASE, { useNewUrlParser: true,  useUnifiedTopology: true  })
+const db = mongoose.connect('mongodb://AdminJared:HENry0521-@198.71.50.229:27017/'+process.env.DATABASE, { useNewUrlParser: true,  useUnifiedTopology: true  })
     .then(() => console.log('Connect to MongoDB..'))
     .catch(err => console.error('Could not connect to MongoDB..', err))
 
