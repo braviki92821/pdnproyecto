@@ -28,39 +28,20 @@ app.use(bodyParser.json());
 app.use(cors(),bodyParser.urlencoded({ extended: true })); // support form-encoded bodies (for the token endpoint)
 
 //connection mongo db localhost:27017/auth20'
-const tunnelOptions = {
-	autoClose:true
-}
-const serverOptions = {
-	host:'0.0.0.0',
-	port: 27017
-}
-const sshOptions = {
-	host: '198.71.50.229',
-	port: 22,
-	username: 'root',
-	password: '98tZot#*nj'
-};
-const forwardOptions = {
-	srcAddr:'0.0.0.0',
-	srcPort:9004,
-	dstAddr:'198.71.50.229',
-	dstPort:27017
-}
-tunnel.createTunnel(tunnelOptions,serverOptions,sshOptions,forwardOptions).then(()=>{
-    mongoose.connect('mongodb://root:pdnService@198.71.50.229:27017/'+process.env.DATABASE, { useNewUrlParser: true,  useUnifiedTopology: true  })
-    .then(() => console.log('Connect to MongoDB..'))
-    .catch(err => console.error('Could not connect to MongoDB..', err))
-}).catch(err =>console.error(err) )
+
+ mongoose.connect('mongodb://'+process.env.USERMONGO+':'+process.env.PASSWORDMONGO+process.env.HOSTMONGO+process.env.DATABASE+'?authSource=admin', {useNewUrlParser: true,  useUnifiedTopology: true  })
+ .then(() => console.log('Connect to MongoDB..')   )
+ .catch(err => console.log('Could not connect to MongoDB..', err))
 
 
+//mongodb://AdminJared:HENry0521@198.71.50.229:27017/
+//mongoimport --host @198.71.50.229:27017 --username AdminJared --password HENry0521 --db auth20 --collection catalogos --type json --file catalogos.json
 
 app.post('/oauth/token',async  function(req, res) {
     let clientObject = decodeClientCredentials(req);
     let scopeBody = req.body.scope ?  req.body.scope.split(' ') : [];
     if(clientObject.id){
         let cliente = await clientService.getClient(clientObject.id);
-        console.log(cliente)
                 if(cliente){
                     let clientSecret='';
                     if(cliente.clientSecret){
